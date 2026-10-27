@@ -37,6 +37,18 @@ jobs:
           test -f project/app/src/main/java/com/vishal/linkopener/MainActivity.java
           test -f project/app/src/main/res/drawable/hacker_header.jpg
 
+      - name: Inspect Android source
+        run: |
+          echo '=== MainActivity.java ==='
+          sed -n '1,300p' project/app/src/main/java/com/vishal/linkopener/MainActivity.java
+          echo '=== AndroidManifest.xml ==='
+          sed -n '1,220p' project/app/src/main/AndroidManifest.xml
+          echo '=== Layout and values files ==='
+          find project/app/src/main/res -maxdepth 2 -type f | sort
+          for f in project/app/src/main/res/layout/*.xml project/app/src/main/res/values/*.xml; do
+            if [ -f "$f" ]; then echo "=== $f ==="; sed -n '1,220p' "$f"; fi
+          done
+
       - name: Build APK
         run: gradle --no-daemon -p project assembleDebug
 
