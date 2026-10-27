@@ -20,6 +20,7 @@ new = r'''  void viewer() {
     FrameLayout area = new FrameLayout(this);
     area.setBackgroundColor(Color.rgb(35,35,35));
     area.setClipToPadding(true);
+    area.setMinimumHeight(dp(180));
     ProgressBar progress = new ProgressBar(this);
     progress.setIndeterminate(true);
     TextView loading = text("Loading Purchase Order...", 16, Color.WHITE, true);
@@ -84,7 +85,8 @@ new = r'''  void viewer() {
             PdfRenderer renderer = new PdfRenderer(fd);
             if (renderer.getPageCount()==0) throw new Exception("Empty PDF");
             PdfPageView pdfView = new PdfPageView(renderer);
-            area.addView(pdfView,new FrameLayout.LayoutParams(-1,-1));
+            area.removeAllViews();
+            area.addView(pdfView,new FrameLayout.LayoutParams(-1,-2));
           } catch(Exception ex) {
             loadingBox.removeAllViews();
             TextView msg=text("PURCHASE ORDER NOT READY",18,Color.WHITE,true);
