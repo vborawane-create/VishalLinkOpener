@@ -9,7 +9,7 @@ new = r'''  void viewer() {
     LinearLayout page = new LinearLayout(this);
     page.setOrientation(LinearLayout.VERTICAL);
     page.setBackgroundColor(BG);
-    page.setPadding(0, dp(4), 0, 0);
+    page.setPadding(0, 0, 0, 0);
 
     FrameLayout area = new FrameLayout(this);
     area.setBackgroundColor(Color.rgb(35,35,35));
@@ -32,7 +32,7 @@ new = r'''  void viewer() {
     download.setAllCaps(false);
     download.setBackground(panel(RED, Color.rgb(177,7,32), 10));
     LinearLayout.LayoutParams downloadLp = lp(-1,56);
-    downloadLp.setMargins(dp(12),dp(8),dp(12),dp(8));
+    downloadLp.setMargins(dp(12),dp(6),dp(12),dp(6));
     page.addView(download, downloadLp);
     download.setOnClickListener(v -> downloadPdf());
     setContentView(page);
@@ -87,26 +87,33 @@ new = r'''  void viewer() {
     }).start();
   }
 
-  class PdfPageView extends View {
-    private final PdfRenderer renderer;
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    PdfPageView(PdfRenderer r) { super(MainActivity.this); renderer=r; setBackgroundColor(Color.rgb(45,45,45)); }
-    @Override protected void onDraw(Canvas canvas) {
-      super.onDraw(canvas);
-      int y=dp(10);
-      for(int i=0;i<renderer.getPageCount() && y<getHeight();i++) {
-        try(PdfRenderer.Page page=renderer.openPage(i)) {
-          float scale=Math.min((float)(getWidth()-dp(16))/page.getWidth(),1.5f);
-          int w=Math.max(1,(int)(page.getWidth()*scale));
-          int h=Math.max(1,(int)(page.getHeight()*scale));
-          Bitmap bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
-          bitmap.eraseColor(Color.WHITE);
-          page.render(bitmap,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-          canvas.drawBitmap(bitmap,dp(8),y,paint);
-          y+=h+dp(10);
-          bitmap.recycle();
-        } catch(Exception ignored) { break; }
+  class PdfPageView extends ScrollView {
+    PdfPageView(PdfRenderer renderer) throws Exception {
+      super(MainActivity.this);
+      setFillViewport(false);
+      setBackgroundColor(Color.rgb(45,45,45));
+      setVerticalScrollBarEnabled(true);
+      LinearLayout pages = new LinearLayout(MainActivity.this);
+      pages.setOrientation(LinearLayout.VERTICAL);
+      pages.setPadding(dp(8),dp(8),dp(8),dp(12));
+      int screenWidth = getResources().getDisplayMetrics().widthPixels - dp(32);
+      for (int i=0;i<renderer.getPageCount();i++) {
+        PdfRenderer.Page pdfPage = renderer.openPage(i);
+        int width = Math.max(1, screenWidth);
+        int height = Math.max(1, (int)(width * (float)pdfPage.getHeight() / pdfPage.getWidth()));
+        Bitmap bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
+        bitmap.eraseColor(Color.WHITE);
+        pdfPage.render(bitmap,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+        pdfPage.close();
+        ImageView image = new ImageView(MainActivity.this);
+        image.setImageBitmap(bitmap);
+        image.setScaleType(ImageView.ScaleType.FIT_XY);
+        image.setBackgroundColor(Color.WHITE);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, height);
+        params.bottomMargin = dp(12);
+        pages.addView(image,params);
       }
+      addView(pages,new ScrollView.LayoutParams(-1,-2));
     }
   }
 '''
