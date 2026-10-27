@@ -43,13 +43,8 @@ new = r'''  void viewer() {
     downloadLp.setMargins(dp(12),dp(6),dp(12),dp(6));
     // Keep the download button immediately below the PDF page, not pinned to the screen bottom.
     page.removeView(area);
-    ScrollView pdfScroll = (ScrollView) area.getChildAt(0);
-    if (pdfScroll != null) {
-      // PDF scroll container keeps its own measured page height; button follows the PDF content.
-      page.addView(area, 0, new LinearLayout.LayoutParams(-1, -2));
-    } else {
-      page.addView(area, 0, new LinearLayout.LayoutParams(-1, -2));
-    }
+    // Wrap the PDF area to its content height so the download button sits just below it.
+    page.addView(area, 0, new LinearLayout.LayoutParams(-1, -2));
     page.addView(download, downloadLp);
     download.setOnClickListener(v -> downloadPdf());
     setContentView(page);
