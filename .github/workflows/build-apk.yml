@@ -39,6 +39,8 @@ jobs:
 
       - name: Apply new red and black home header only
         run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
           convert -background none home_header.svg -resize 480x853! project/app/src/main/res/drawable/hacker_header.jpg
           test -s project/app/src/main/res/drawable/hacker_header.jpg
 
