@@ -40,6 +40,15 @@ new = r'''  void viewer() {
     download.setBackground(panel(RED, Color.rgb(177,7,32), 10));
     LinearLayout.LayoutParams downloadLp = lp(-1,50);
     downloadLp.setMargins(dp(12),dp(6),dp(12),dp(6));
+    // Keep the download button immediately below the PDF page, not pinned to the screen bottom.
+    page.removeView(area);
+    ScrollView pdfScroll = (ScrollView) area.getChildAt(0);
+    if (pdfScroll != null) {
+      // PDF scroll container keeps its own measured page height; button follows the PDF content.
+      page.addView(area, 0, new LinearLayout.LayoutParams(-1, -2));
+    } else {
+      page.addView(area, 0, new LinearLayout.LayoutParams(-1, -2));
+    }
     page.addView(download, downloadLp);
     download.setOnClickListener(v -> downloadPdf());
     setContentView(page);
