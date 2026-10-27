@@ -2,6 +2,26 @@ import pathlib, re
 p = pathlib.Path("project/app/src/main/java/com/vishal/linkopener/MainActivity.java")
 s = p.read_text()
 # Replace the Google Docs viewer with a native PDF renderer and fixed bottom download action.
+helpers = r'''  int getStatusBarSafeInset() {
+    int result = 0;
+    int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+    if (id > 0) result = getResources().getDimensionPixelSize(id);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      android.view.WindowInsets wi = getWindow().getDecorView().getRootWindowInsets();
+      android.view.DisplayCutout cutout = wi != null ? wi.getDisplayCutout() : null;
+      if (cutout != null) result = Math.max(result, cutout.getSafeInsetTop());
+    }
+    return result;
+  }
+
+  int getNavigationBarSafeInset() {
+    int id = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+    return id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+  }
+
+'''
+if 'int getStatusBarSafeInset()' not in s:
+    s = s.replace('  void viewer() {', helpers + '  void viewer() {', 1)
 # Keep the home screen scrollable when the keyboard opens, and move the demand field above it.
 s = s.replace('demand.setPadding(dp(14),dp(7),dp(14),dp(7)); demand.setBackground(panel(RED,Color.rgb(12,10,12),9)); root.addView(demand,lp(-1,58));',
 '''demand.setPadding(dp(14),dp(7),dp(14),dp(7)); demand.setBackground(panel(RED,Color.rgb(12,10,12),9)); root.addView(demand,lp(-1,58));
@@ -9,7 +29,7 @@ s = s.replace('demand.setPadding(dp(14),dp(7),dp(14),dp(7)); demand.setBackgroun
       if (hasFocus) scroll.postDelayed(() -> scroll.smoothScrollTo(0, Math.max(0, demand.getBottom() + dp(48) - scroll.getHeight())), 180);
     });''')
 s = s.replace("import android.webkit.*;", "import android.webkit.*;\nimport android.graphics.pdf.PdfRenderer;\nimport android.os.ParcelFileDescriptor;\nimport java.net.HttpURLConnection;\nimport java.net.URL;\nimport java.io.File;\nimport java.io.FileOutputStream;")
-start = s.index('  int getStatusBarSafeInset() {')
+start = s.index('  void viewer() {')
 end = s.index('  void downloadPdf() {', start)
 new = r'''  void viewer() {
     LinearLayout page = new LinearLayout(this);
