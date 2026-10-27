@@ -10,9 +10,16 @@ new = r'''  void viewer() {
     page.setOrientation(LinearLayout.VERTICAL);
     page.setBackgroundColor(BG);
     page.setPadding(0, 0, 0, 0);
+    // Keep Android status and navigation bars visible; content stays inside safe area.
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      getWindow().setDecorFitsSystemWindows(true);
+    }
+    getWindow().getDecorView().setSystemUiVisibility(0);
 
     FrameLayout area = new FrameLayout(this);
     area.setBackgroundColor(Color.rgb(35,35,35));
+    area.setClipToPadding(true);
     ProgressBar progress = new ProgressBar(this);
     progress.setIndeterminate(true);
     TextView loading = text("Loading Purchase Order...", 16, Color.WHITE, true);
@@ -31,7 +38,7 @@ new = r'''  void viewer() {
     download.setTextColor(Color.WHITE);
     download.setAllCaps(false);
     download.setBackground(panel(RED, Color.rgb(177,7,32), 10));
-    LinearLayout.LayoutParams downloadLp = lp(-1,56);
+    LinearLayout.LayoutParams downloadLp = lp(-1,50);
     downloadLp.setMargins(dp(12),dp(6),dp(12),dp(6));
     page.addView(download, downloadLp);
     download.setOnClickListener(v -> downloadPdf());
