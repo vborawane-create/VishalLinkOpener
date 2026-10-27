@@ -1,10 +1,11 @@
-name: Build Vishal PO DownloadR APK
+name: Build Vishal PO DownloadR APK - New Icon
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+      - build-21-new-launcher-icon
 
 permissions:
   contents: read
@@ -36,15 +37,25 @@ jobs:
           test -f project/settings.gradle.kts
           test -f project/app/src/main/java/com/vishal/linkopener/MainActivity.java
           test -f project/app/src/main/res/drawable/hacker_header.jpg
+          test -f project/app/src/main/AndroidManifest.xml
 
-      - name: Set existing Hacker Edition image as app launcher icon
+      - name: Apply new red and black home header
         run: |
           sudo apt-get update
           sudo apt-get install -y imagemagick
+          convert -background none home_header.svg -resize 480x853! project/app/src/main/res/drawable/hacker_header.jpg
+          test -s project/app/src/main/res/drawable/hacker_header.jpg
+
+      - name: Generate launcher icons and ensure manifest points to them
+        run: |
+          set -euo pipefail
           RES=project/app/src/main/res
-          mkdir -p "$RES/drawable-nodpi"
-          # Use the image already inside the Android project; do not create a new picture.
+          MANIFEST=project/app/src/main/AndroidManifest.xml
+          mkdir -p "$RES/drawable-nodpi" "$RES/mipmap-anydpi-v26"
+
+          # Use the existing Hacker Edition/header image; do not replace the source image.
           convert "$RES/drawable/hacker_header.jpg" -gravity center -crop 480x480+0+0 +repage -resize 432x432 "$RES/drawable-nodpi/ic_launcher_foreground.png"
+
           for spec in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
             dir="${spec%%:*}"
             size="${spec##*:}"
@@ -52,31 +63,48 @@ jobs:
             convert "$RES/drawable/hacker_header.jpg" -gravity center -crop 480x480+0+0 +repage -resize "${size}x${size}" "$RES/$dir/ic_launcher.png"
             cp "$RES/$dir/ic_launcher.png" "$RES/$dir/ic_launcher_round.png"
           done
-          if [ -d "$RES/mipmap-anydpi-v26" ]; then
-            cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
+
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@android:color/black" />
               <foreground android:drawable="@drawable/ic_launcher_foreground" />
           </adaptive-icon>
           EOF
-            cp "$RES/mipmap-anydpi-v26/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
-          fi
-          echo "Launcher icon assets generated from the existing Hacker Edition image."
-          find "$RES" -path '*mipmap*ic_launcher*' -type f -print
+          cp "$RES/mipmap-anydpi-v26/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
 
-      - name: Apply new red and black home header only
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-          convert -background none home_header.svg -resize 480x853! project/app/src/main/res/drawable/hacker_header.jpg
-          test -s project/app/src/main/res/drawable/hacker_header.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("project/app/src/main/AndroidManifest.xml")
+          s = p.read_text(encoding="utf-8")
+          m = re.search(r"<application\b[^>]*>", s, flags=re.S)
+          if not m:
+              raise SystemExit("AndroidManifest.xml has no <application> element")
+          app = m.group(0)
+          for attr, value in (("android:icon", "@mipmap/ic_launcher"),
+                              ("android:roundIcon", "@mipmap/ic_launcher_round")):
+              pattern = rf'\b{re.escape(attr)}\s*=\s*["\'][^"\']*["\']'
+              if re.search(pattern, app):
+                  app = re.sub(pattern, f'{attr}="{value}"', app)
+              else:
+                  app = app[:-1] + f' {attr}="{value}">'
+          s = s[:m.start()] + app + s[m.end():]
+          p.write_text(s, encoding="utf-8")
+          print("Manifest launcher icon references set to @mipmap/ic_launcher and @mipmap/ic_launcher_round")
+          PY
 
-      - name: Inspect home screen source for requested header-only edit
+          grep -n '<application' "$MANIFEST"
+          test -s "$RES/mipmap-mdpi/ic_launcher.png"
+          test -s "$RES/mipmap-anydpi-v26/ic_launcher.xml"
+
+      - name: Inspect app source and launcher icon configuration
         run: |
+          echo '--- Manifest launcher icon configuration ---'
+          grep -n '<application' project/app/src/main/AndroidManifest.xml
+          echo '--- Launcher icon assets ---'
+          find project/app/src/main/res -path '*ic_launcher*' -type f -print
           echo '--- MainActivity image and status bar references ---'
           grep -n -E 'setContentView|ImageView|BitmapFactory|hacker_header|statusBar|Date|Time|TextClock|TextView|decorView|SYSTEM_UI_FLAG|addView' project/app/src/main/java/com/vishal/linkopener/MainActivity.java | head -160
-          echo '--- drawable assets ---'
-          file project/app/src/main/res/drawable/* 2>/dev/null || true
 
       - name: Apply Purchase Order PDF UI fixes
         run: python3 .github/scripts/patch_android.py
@@ -84,10 +112,13 @@ jobs:
       - name: Build APK
         run: gradle --no-daemon -p project assembleDebug
 
+      - name: Verify APK exists
+        run: test -s project/app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Vishal-PO-DownloadR-APK
+          name: Vishal-PO-DownloadR-New-Icon-APK
           path: project/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
