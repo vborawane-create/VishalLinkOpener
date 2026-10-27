@@ -56,7 +56,7 @@ jobs:
             cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@android:color/black" />
-              <foreground android:drawable="@drawable-nodpi/ic_launcher_foreground" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
           </adaptive-icon>
           EOF
             cp "$RES/mipmap-anydpi-v26/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
