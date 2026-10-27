@@ -37,6 +37,33 @@ jobs:
           test -f project/app/src/main/java/com/vishal/linkopener/MainActivity.java
           test -f project/app/src/main/res/drawable/hacker_header.jpg
 
+      - name: Set existing Hacker Edition image as app launcher icon
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          RES=project/app/src/main/res
+          mkdir -p "$RES/drawable-nodpi"
+          # Use the image already inside the Android project; do not create a new picture.
+          convert "$RES/drawable/hacker_header.jpg" -gravity center -crop 480x480+0+0 +repage -resize 432x432 "$RES/drawable-nodpi/ic_launcher_foreground.png"
+          for spec in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
+            dir="${spec%%:*}"
+            size="${spec##*:}"
+            mkdir -p "$RES/$dir"
+            convert "$RES/drawable/hacker_header.jpg" -gravity center -crop 480x480+0+0 +repage -resize "${size}x${size}" "$RES/$dir/ic_launcher.png"
+            cp "$RES/$dir/ic_launcher.png" "$RES/$dir/ic_launcher_round.png"
+          done
+          if [ -d "$RES/mipmap-anydpi-v26" ]; then
+            cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black" />
+              <foreground android:drawable="@drawable-nodpi/ic_launcher_foreground" />
+          </adaptive-icon>
+          EOF
+            cp "$RES/mipmap-anydpi-v26/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
+          fi
+          echo "Launcher icon assets generated from the existing Hacker Edition image."
+          find "$RES" -path '*mipmap*ic_launcher*' -type f -print
+
       - name: Apply new red and black home header only
         run: |
           sudo apt-get update
