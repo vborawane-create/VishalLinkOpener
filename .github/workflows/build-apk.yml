@@ -1,4 +1,5 @@
-name: Build Vishal Link Opener APK
+
+name: Build Vishal PO DownloadR APK
 
 on:
   workflow_dispatch:
@@ -11,15 +12,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - uses: gradle/actions/setup-gradle@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
@@ -27,13 +32,264 @@ jobs:
         run: |
           mkdir project
           unzip -q VishalLinkOpener-Android-Project.zip -d project
-          ls -la project
+
+      - name: Update app source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          base = Path("project")
+          java = base / "app/src/main/java/com/vishal/linkopener/MainActivity.java"
+          manifest = base / "app/src/main/AndroidManifest.xml"
+
+          java.parent.mkdir(parents=True, exist_ok=True)
+
+          source = r'''package com.vishal.linkopener;
+
+          import android.app.*;
+          import android.os.*;
+          import android.content.*;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
+          import android.net.Uri;
+          import android.view.*;
+          import android.webkit.*;
+          import android.widget.*;
+          import android.text.InputFilter;
+          import android.text.InputType;
+
+          public class MainActivity extends Activity {
+              int red = Color.rgb(255, 35, 65);
+              int black = Color.rgb(8, 9, 12);
+              Spinner month;
+              EditText demand;
+              String pdfUrl = "";
+              WebView web;
+
+              int dp(int n) {
+                  return (int)(n * getResources().getDisplayMetrics().density + .5f);
+              }
+
+              TextView label(String s, int size, int color) {
+                  TextView t = new TextView(this);
+                  t.setText(s);
+                  t.setTextSize(size);
+                  t.setTextColor(color);
+                  t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+                  return t;
+              }
+
+              public void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  getWindow().setStatusBarColor(black);
+                  getWindow().setNavigationBarColor(black);
+                  home();
+              }
+
+              void home() {
+                  ScrollView scroll = new ScrollView(this);
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(1);
+                  root.setPadding(dp(22), dp(25), dp(22), dp(24));
+                  root.setBackgroundColor(black);
+                  scroll.addView(root);
+
+                  TextView top = label("SYSTEM // CSD PURCHASE ORDER", 11, red);
+                  top.setGravity(Gravity.CENTER);
+                  root.addView(top, new LinearLayout.LayoutParams(-1, dp(35)));
+
+                  TextView title = label("VISHAL PO", 30, Color.WHITE);
+                  title.setGravity(Gravity.CENTER);
+                  root.addView(title, new LinearLayout.LayoutParams(-1, dp(45)));
+
+                  TextView subtitle = label("DOWNLOADR  /  HACKER EDITION", 12, red);
+                  subtitle.setGravity(Gravity.CENTER);
+                  root.addView(subtitle, new LinearLayout.LayoutParams(-1, dp(32)));
+
+                  View line = new View(this);
+                  line.setBackgroundColor(red);
+                  LinearLayout.LayoutParams linep = new LinearLayout.LayoutParams(-1, dp(2));
+                  linep.setMargins(0, dp(18), 0, dp(25));
+                  root.addView(line, linep);
+
+                  root.addView(label("SELECT MONTH AND YEAR OF PO", 13, Color.WHITE),
+                      new LinearLayout.LayoutParams(-1, dp(38)));
+
+                  month = new Spinner(this);
+                  String[] months = {
+                      "01 / JANUARY", "02 / FEBRUARY", "03 / MARCH",
+                      "04 / APRIL", "05 / MAY", "06 / JUNE",
+                      "07 / JULY", "08 / AUGUST", "09 / SEPTEMBER",
+                      "10 / OCTOBER", "11 / NOVEMBER", "12 / DECEMBER"
+                  };
+                  ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                      this, android.R.layout.simple_spinner_item, months);
+                  adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                  month.setAdapter(adapter);
+                  month.setSelection(0);
+                  root.addView(month, new LinearLayout.LayoutParams(-1, dp(54)));
+
+                  TextView year = label("YEAR: 2026", 14, red);
+                  LinearLayout.LayoutParams yp = new LinearLayout.LayoutParams(-1, dp(35));
+                  yp.topMargin = dp(8);
+                  root.addView(year, yp);
+
+                  TextView nlabel = label("ENTER DEMAND NUMBER  (7 DIGITS)", 13, Color.WHITE);
+                  LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, dp(42));
+                  nlp.topMargin = dp(18);
+                  root.addView(nlabel, nlp);
+
+                  demand = new EditText(this);
+                  demand.setSingleLine(true);
+                  demand.setTextSize(17);
+                  demand.setTextColor(Color.WHITE);
+                  demand.setHintTextColor(Color.GRAY);
+                  demand.setHint("Enter 7 digit number");
+                  demand.setInputType(InputType.TYPE_CLASS_NUMBER);
+                  demand.setFilters(new InputFilter[] {
+                      new InputFilter.LengthFilter(7),
+                      (src, start, end, dst, ds, de) -> {
+                          for (int i = start; i < end; i++)
+                              if (src.charAt(i) < '0' || src.charAt(i) > '9') return "";
+                          return null;
+                      }
+                  });
+                  demand.setPadding(dp(14), dp(10), dp(14), dp(10));
+                  demand.setBackgroundTintList(
+                      android.content.res.ColorStateList.valueOf(red));
+                  root.addView(demand, new LinearLayout.LayoutParams(-1, dp(56)));
+
+                  Button get = new Button(this);
+                  get.setText("GET PURCHASE ORDER");
+                  get.setTextColor(Color.WHITE);
+                  get.setTextSize(15);
+                  get.setBackgroundTintList(
+                      android.content.res.ColorStateList.valueOf(Color.rgb(185, 10, 35)));
+                  LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(-1, dp(58));
+                  gp.topMargin = dp(27);
+                  root.addView(get, gp);
+                  get.setOnClickListener(v -> openPdf());
+
+                  TextView footer = label("CSD DOCUMENT VIEWER", 10, Color.GRAY);
+                  footer.setGravity(Gravity.CENTER);
+                  LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(-1, dp(40));
+                  root.addView(footer, fp);
+
+                  setContentView(scroll);
+              }
+
+              void openPdf() {
+                  String n = demand.getText().toString();
+                  if (n.length() != 7) {
+                      demand.setError("Enter exactly 7 digits");
+                      return;
+                  }
+                  String mm = String.format("%02d", month.getSelectedItemPosition() + 1);
+                  pdfUrl = "https://afd.csdindia.gov.in/wp-content/uploads/2026/"
+                      + mm + "/" + n + "_PO_Sign.pdf";
+                  viewer();
+              }
+
+              void viewer() {
+                  LinearLayout page = new LinearLayout(this);
+                  page.setOrientation(1);
+                  page.setBackgroundColor(black);
+
+                  LinearLayout bar = new LinearLayout(this);
+                  bar.setGravity(Gravity.CENTER_VERTICAL);
+                  bar.setPadding(dp(5), dp(3), dp(5), dp(3));
+
+                  Button back = new Button(this);
+                  back.setText("BACK");
+                  back.setOnClickListener(v -> {
+                      if (web != null) {
+                          web.destroy();
+                          web = null;
+                      }
+                      home();
+                  });
+                  bar.addView(back, new LinearLayout.LayoutParams(dp(80), dp(48)));
+
+                  TextView heading = label("PURCHASE ORDER", 11, red);
+                  heading.setGravity(Gravity.CENTER);
+                  bar.addView(heading, new LinearLayout.LayoutParams(0, dp(48), 1));
+
+                  Button download = new Button(this);
+                  download.setText("DOWNLOAD");
+                  download.setTextSize(10);
+                  download.setOnClickListener(v -> downloadPdf());
+                  bar.addView(download, new LinearLayout.LayoutParams(dp(105), dp(48)));
+                  page.addView(bar, new LinearLayout.LayoutParams(-1, dp(54)));
+
+                  web = new WebView(this);
+                  web.setBackgroundColor(Color.DKGRAY);
+                  web.getSettings().setJavaScriptEnabled(true);
+                  web.getSettings().setDomStorageEnabled(true);
+                  web.setWebViewClient(new WebViewClient());
+                  web.loadUrl("https://docs.google.com/gview?embedded=1&url="
+                      + Uri.encode(pdfUrl));
+                  page.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
+                  setContentView(page);
+              }
+
+              void downloadPdf() {
+                  try {
+                      DownloadManager.Request r =
+                          new DownloadManager.Request(Uri.parse(pdfUrl));
+                      r.setTitle("Purchase Order PDF");
+                      r.setDescription("CSD purchase order");
+                      r.setNotificationVisibility(
+                          DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                      r.setDestinationInExternalPublicDir(
+                          Environment.DIRECTORY_DOWNLOADS,
+                          "PO_" + demand.getText().toString() + "_PO_Sign.pdf");
+                      DownloadManager dm =
+                          (DownloadManager)getSystemService(DOWNLOAD_SERVICE);
+                      dm.enqueue(r);
+                      new AlertDialog.Builder(this)
+                          .setMessage("Download started. Check Downloads.")
+                          .setPositiveButton("OK", null).show();
+                  } catch (Exception e) {
+                      new AlertDialog.Builder(this)
+                          .setMessage("Unable to start download.")
+                          .setPositiveButton("OK", null).show();
+                  }
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web != null && web.canGoBack()) web.goBack();
+                  else home();
+              }
+          }
+          '''
+          java.write_text(source)
+
+          if manifest.exists():
+              s = manifest.read_text()
+              if "android.permission.INTERNET" not in s:
+                  s = s.replace("<application",
+                      '<uses-permission android:name="android.permission.INTERNET" />\n    <application', 1)
+              s = re.sub(r'android:label="[^"]*"', 'android:label="Vishal PO DownloadR"', s)
+              manifest.write_text(s)
+
+          strings = base / "app/src/main/res/values/strings.xml"
+          if strings.exists():
+              s = strings.read_text()
+              s = re.sub(r'(<string name="app_name">).*?(</string>)',
+                         r'\1Vishal PO DownloadR\2', s)
+              strings.write_text(s)
+
+          print("Updated source for Vishal PO DownloadR")
+          PY
 
       - name: Build APK
         run: gradle --no-daemon -p project assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: VishalLinkOpener-APK
+          name: Vishal-PO-DownloadR-APK
           path: project/app/build/outputs/apk/debug/app-debug.apk
           
