@@ -3,13 +3,33 @@ p = pathlib.Path("project/app/src/main/java/com/vishal/linkopener/MainActivity.j
 s = p.read_text()
 # Replace the Google Docs viewer with a native PDF renderer and fixed bottom download action.
 s = s.replace("import android.webkit.*;", "import android.webkit.*;\nimport android.graphics.pdf.PdfRenderer;\nimport android.os.ParcelFileDescriptor;\nimport java.net.HttpURLConnection;\nimport java.net.URL;\nimport java.io.File;\nimport java.io.FileOutputStream;")
-start = s.index("  void viewer() {")
+start = s.index("  int getStatusBarSafeInset() {
+    int result = 0;
+    int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+    if (id > 0) result = getResources().getDimensionPixelSize(id);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      android.graphics.Rect bounds = new android.graphics.Rect();
+      getWindow().getDecorView().getRootWindowInsets();
+      android.view.DisplayCutout cutout = getWindow().getDecorView().getRootWindowInsets() != null
+          ? getWindow().getDecorView().getRootWindowInsets().getDisplayCutout() : null;
+      if (cutout != null) result = Math.max(result, cutout.getSafeInsetTop());
+    }
+    return result;
+  }
+
+  int getNavigationBarSafeInset() {
+    int id = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+    return id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+  }
+
+  void viewer() {")
 end = s.index("  void downloadPdf() {", start)
 new = r'''  void viewer() {
     LinearLayout page = new LinearLayout(this);
     page.setOrientation(LinearLayout.VERTICAL);
     page.setBackgroundColor(BG);
-    page.setPadding(0, 0, 0, 0);
+    // Reserve the status-bar / camera cutout safe area at the top.
+    page.setPadding(0, getStatusBarSafeInset(), 0, getNavigationBarSafeInset());
     // Keep Android status and navigation bars visible; content stays inside safe area.
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
