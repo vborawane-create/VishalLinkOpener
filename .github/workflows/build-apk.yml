@@ -37,10 +37,11 @@ jobs:
           test -f project/app/src/main/java/com/vishal/linkopener/MainActivity.java
           test -f project/app/src/main/res/drawable/hacker_header.jpg
 
-      - name: Apply uploaded home header photo only
+      - name: Apply new red and black home header only
         run: |
-          test -s home_header_photo.jpg
-          cp home_header_photo.jpg project/app/src/main/res/drawable/hacker_header.jpg
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          convert -background none home_header.svg -resize 480x853! project/app/src/main/res/drawable/hacker_header.jpg
           test -s project/app/src/main/res/drawable/hacker_header.jpg
 
       - name: Inspect home screen source for requested header-only edit
