@@ -26,7 +26,13 @@ if 'int getStatusBarSafeInset()' not in s:
 s = s.replace('demand.setPadding(dp(14),dp(7),dp(14),dp(7)); demand.setBackground(panel(RED,Color.rgb(12,10,12),9)); root.addView(demand,lp(-1,58));',
 '''demand.setPadding(dp(14),dp(7),dp(14),dp(7)); demand.setBackground(panel(RED,Color.rgb(12,10,12),9)); root.addView(demand,lp(-1,58));
     demand.setOnFocusChangeListener((v, hasFocus) -> {
-      if (hasFocus) scroll.postDelayed(() -> scroll.smoothScrollTo(0, Math.max(0, demand.getBottom() + dp(48) - scroll.getHeight())), 180);
+      if (hasFocus) scroll.postDelayed(() -> {
+        int[] fieldPos = new int[2];
+        demand.getLocationOnScreen(fieldPos);
+        int screenBottom = getWindow().getDecorView().getHeight() - getNavigationBarSafeInset() - dp(20);
+        int overlap = fieldPos[1] + demand.getHeight() - screenBottom;
+        if (overlap > 0) scroll.smoothScrollBy(0, overlap + dp(20));
+      }, 300);
     });''')
 s = s.replace("import android.webkit.*;", "import android.webkit.*;\nimport android.graphics.pdf.PdfRenderer;\nimport android.os.ParcelFileDescriptor;\nimport java.net.HttpURLConnection;\nimport java.net.URL;\nimport java.io.File;\nimport java.io.FileOutputStream;")
 start = s.index('  void viewer() {')
@@ -168,7 +174,7 @@ if 'android.permission.INTERNET' not in m:
     m = m.replace("<manifest", '<manifest')
     m = re.sub(r'(<manifest[^>]*>)', r'\1\n    <uses-permission android:name="android.permission.INTERNET" />', m, count=1)
 # Resize the activity when the soft keyboard opens.
-m = re.sub(r'(<activity\\b[^>]*)(>)', lambda match: match.group(1) + (' android:windowSoftInputMode="adjustResize"' if 'android:windowSoftInputMode=' not in match.group(1) else '') + match.group(2), m, count=1)
+m = re.sub(r'(<activity\b[^>]*)(>)', lambda match: match.group(1) + (' android:windowSoftInputMode="adjustResize"' if 'android:windowSoftInputMode=' not in match.group(1) else '') + match.group(2), m, count=1)
 m = re.sub(r'android:windowSoftInputMode="[^"]*"', 'android:windowSoftInputMode="adjustResize"', m, count=1)
 manifest.write_text(m)
 print("Patched native PDF viewer, loading state, not-ready message, and bottom download button.")
